@@ -1,0 +1,53 @@
+# .gitattributes
+# OWNERSHIP: Jhanvi (DevOps Lead)
+#
+# Enforces Unix LF line endings for EVERY text file in this repository.
+#
+# WHY THIS MATTERS:
+#   Two teammates are on WSL 2 (Windows host, git core.autocrlf may be "true").
+#   Two teammates are on Ubuntu (LF native).
+#   Shell scripts, Dockerfiles, and Node.js source files bind-mounted into
+#   Alpine Linux containers MUST use LF. A single CRLF line in a shell script
+#   causes "bad interpreter: No such file or directory" inside the container.
+#   This file prevents that at the Git transport layer — no per-machine config needed.
+#
+# HOW IT WORKS:
+#   Git normalises line endings to LF in the repository index.
+#   On checkout every file gets LF regardless of the OS or core.autocrlf setting.
+# ---------------------------------------------------------------------------
+
+# Default: treat every tracked file as text and force LF on checkout.
+* text=auto eol=lf
+
+# Explicitly mark common source types as text (Git sometimes misdetects binary).
+*.js        text eol=lf
+*.ts        text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
+*.json      text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.md        text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.sh        text eol=lf
+*.env       text eol=lf
+*.env.*     text eol=lf
+Dockerfile  text eol=lf
+*.dockerfile text eol=lf
+.gitignore  text eol=lf
+.gitattributes text eol=lf
+
+# Binary files — tell Git not to touch line endings at all.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.eot    binary
+*.zip    binary
+*.tar    binary
+*.gz     binary
