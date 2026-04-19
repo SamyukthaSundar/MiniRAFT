@@ -1,0 +1,137 @@
+networks:
+  raft-net:
+    driver: bridge
+
+x-replica-env: &replica-env
+  PEER_URLS: "http://replica1:3000,http://replica2:3000,http://replica3:3000,http://replica4:3000"
+  GATEWAY_URL: "http://gateway:4001"
+  HEARTBEAT_INTERVAL_MS: "150"
+  ELECTION_TIMEOUT_MIN_MS: "500"
+  ELECTION_TIMEOUT_MAX_MS: "900"
+  RPC_TIMEOUT_MS: "500"
+  PORT: "3000"
+  NODE_ENV: "development"
+
+x-replica-health: &replica-health
+  test: ["CMD-SHELL", "wget -qO- http://localhost:3000/healthz || exit 1"]
+  interval: 10s
+  timeout: 3s
+  retries: 3
+  start_period: 15s
+
+services:
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    restart: unless-stopped
+    networks:
+      - raft-net
+    ports:
+      - "4000:4000"
+      - "4001:4001"
+    volumes:
+      - ./frontend:/app/src/public:ro
+    environment:
+      GATEWAY_PORT: "4000"
+      INTERNAL_PORT: "4001"
+      REPLICA_URLS: "http://replica1:3000,http://replica2:3000,http://replica3:3000,http://replica4:3000"
+      LEADER_PROBE_INTERVAL_MS: "500"
+      RPC_TIMEOUT_MS: "1000"
+      NODE_ENV: "development"
+    depends_on:
+      replica1:
+        condition: service_healthy
+      replica2:
+        condition: service_healthy
+      replica3:
+        condition: service_healthy
+      replica4:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4001/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  replica1:
+    build:
+      context: ./replica1
+      dockerfile: Dockerfile
+    container_name: replica1
+    hostname: replica1
+    restart: "no"
+    networks:
+      - raft-net
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./replica1:/app
+      - /app/node_modules
+    environment:
+      <<: *replica-env
+      REPLICA_ID: "replica1"
+      PERSIST_FILE: "/tmp/.raft-replica1.json"
+    healthcheck: *replica-health
+
+  replica2:
+    build:
+      context: ./replica2
+      dockerfile: Dockerfile
+    container_name: replica2
+    hostname: replica2
+    restart: "no"
+    networks:
+      - raft-net
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./replica2:/app
+      - /app/node_modules
+    environment:
+      <<: *replica-env
+      REPLICA_ID: "replica2"
+      PERSIST_FILE: "/tmp/.raft-replica2.json"
+    healthcheck: *replica-health
+
+  replica3:
+    build:
+      context: ./replica3
+      dockerfile: Dockerfile
+    container_name: replica3
+    hostname: replica3
+    restart: "no"
+    networks:
+      - raft-net
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./replica3:/app
+      - /app/node_modules
+    environment:
+      <<: *replica-env
+      REPLICA_ID: "replica3"
+      PERSIST_FILE: "/tmp/.raft-replica3.json"
+    healthcheck: *replica-health
+
+  replica4:
+    build:
+      context: ./replica4
+      dockerfile: Dockerfile
+    container_name: replica4
+    hostname: replica4
+    restart: "no"
+    networks:
+      - raft-net
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./replica4:/app
+      - /app/node_modules
+    environment:
+      <<: *replica-env
+      REPLICA_ID: "replica4"
+      PERSIST_FILE: "/tmp/.raft-replica4.json"
+    healthcheck: *replica-health
